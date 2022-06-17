@@ -1,5 +1,4 @@
 Makefile
 platformio.ini
 .gitignore
-README.md
 src/main.cpp

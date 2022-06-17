@@ -1,2 +1,4 @@
-+ PORTB.B5-Out
-+ PORTB.B4-Out
++ PORTD.D2-Out
++ PORTD.D3-Out
++ PORTD.D4-Out
++ PORTD.D5-Out

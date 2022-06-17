@@ -1,6 +1,7 @@
 ./
 /home/aystarik/bender/bender/include
 /home/aystarik/bender/bender/src
+/home/aystarik/bender/bender/.pio/libdeps/nanoatmega328/FixedPoints/src
 /home/aystarik/bender/bender/.pio/libdeps/nanoatmega328/FastGPIO
 /home/aystarik/.platformio/packages/framework-arduino-avr/cores/arduino
 /home/aystarik/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs
