@@ -2,3 +2,4 @@ Makefile
 platformio.ini
 .gitignore
 src/main.cpp
+include/stepper.h
