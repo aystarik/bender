@@ -1,0 +1,2 @@
++ PORTB.B5-Out
++ PORTB.B4-Out

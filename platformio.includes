@@ -1,0 +1,15 @@
+./
+/home/aystarik/bender/bender/include
+/home/aystarik/bender/bender/src
+/home/aystarik/bender/bender/.pio/libdeps/nanoatmega328/FastGPIO
+/home/aystarik/.platformio/packages/framework-arduino-avr/cores/arduino
+/home/aystarik/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs
+/home/aystarik/bender/bender/lib/AccelStepper
+/home/aystarik/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src
+/home/aystarik/.platformio/packages/framework-arduino-avr/libraries/HID/src
+/home/aystarik/.platformio/packages/framework-arduino-avr/libraries/SPI/src
+/home/aystarik/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src
+/home/aystarik/.platformio/packages/framework-arduino-avr/libraries/Wire/src
+/home/aystarik/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/7.3.0/include-fixed
+/home/aystarik/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/7.3.0/include
+/home/aystarik/.platformio/packages/toolchain-atmelavr/avr/include
