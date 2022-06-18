@@ -4,9 +4,9 @@
 #include <stepper.h>
 
 struct Machine {
-    static constexpr float MAX_SPEED_S1 = 400.0f;
-    static constexpr float MAX_SPEED_S2 = 400.0f;
-    static constexpr float MAX_SPEED_S3 = 400.0f;
+    static constexpr float MAX_SPEED_S1 = 400.0f/1024.0f;
+    static constexpr float MAX_SPEED_S2 = 400.0f/1024.0f;
+    static constexpr float MAX_SPEED_S3 = 400.0f/1024.0f;
 
     static constexpr unsigned long S1_LENGTH1 = 400UL;
     static constexpr unsigned long S1_LENGTH2 = 200UL;
@@ -30,31 +30,33 @@ struct Machine {
     bool stop_request;
 
     void start_cycle() {
+        Serial.println("start cycle");
         int a = analogRead(A0);
-        float speed = MAX_SPEED_S1 * a / 1024.0;
+        float speed = MAX_SPEED_S1 * a;
         s.setSpeed(speed);
         st = M_STEP1;
+        s._currentPos = s2._currentPos = s3._currentPos = 0;
         s.move((FastGPIO::Pin<IO_B3>::isInputHigh()) ? S1_LENGTH1 : S1_LENGTH2);
         FastGPIO::Pin<IO_D5>::setOutput(false); // enable motors #2 and #3
     }
 
     void start_setup() {
+        Serial.println("start setup");
         st = M_SETUP;
-        int a = analogRead(A0);
-        float speed = MAX_SPEED_S1 * a / 1024.0;
+        int a = analogRead(A7);
+        float speed = MAX_SPEED_S1 * a;
         s.setSpeed(speed);
         s.move(400000);
     }
 
     Machine() {
-        FastGPIO::Pin<IO_B0>::setInputPulledUp(); // #button #1 (start)
-        FastGPIO::Pin<IO_B1>::setInputPulledUp(); // #button #2 (stop)
-        FastGPIO::Pin<IO_B2>::setInputPulledUp(); // #switch #1 (cycle/setup)
-        FastGPIO::Pin<IO_B3>::setInputPulledUp(); // #switch #2 (len1/len2)
+        FastGPIO::Pin<IO_B0>::setInput(); // #button #1 (start)
+        FastGPIO::Pin<IO_B1>::setInput(); // #button #2 (stop)
+        FastGPIO::Pin<IO_B2>::setInput(); // #switch #1 (cycle/setup)
+        FastGPIO::Pin<IO_B3>::setInput(); // #switch #2 (len1/len2)
 
-        FastGPIO::Pin<IO_D5>::setOutput(true); // enable for motors #2 and #3
-
-        pinMode(A0, INPUT);
+        FastGPIO::Pin<IO_D5>::setOutput(true); // disable motors #2 and #3
+        pinMode(A7, INPUT);
         st = M_IDLE;
     }
     void state_machine() {
@@ -91,8 +93,8 @@ struct Machine {
         }
         case M_STEP1: {
             if (!s.run()) {
-                int a = analogRead(A0);
-                float speed = MAX_SPEED_S2 * a / 1024.0;
+                int a = analogRead(A7);
+                float speed = MAX_SPEED_S2 * a;
                 s2.setSpeed(speed);
                 s2.move(S2_LENGTH); // half-turn
                 st = M_STEP2;
@@ -101,8 +103,8 @@ struct Machine {
         }
         case M_STEP2: {
             if (!s2.run()) {
-                int a = analogRead(A0);
-                float speed = MAX_SPEED_S3 * a / 1024.0;
+                int a = analogRead(A7);
+                float speed = MAX_SPEED_S3 * a;
                 s3.setSpeed(speed);
                 s3.move(S3_LENGTH); // full-turn
                 st = M_STEP3;
@@ -132,10 +134,40 @@ struct Machine {
 } m;
 
 void setup() {
+#if 0
+        FastGPIO::Pin<IO_B0>::setInput(); // #button #1 (start)
+        FastGPIO::Pin<IO_B1>::setInput(); // #button #2 (stop)
+        FastGPIO::Pin<IO_B2>::setInput(); // #switch #1 (cycle/setup)
+        FastGPIO::Pin<IO_B3>::setInput(); // #switch #2 (len1/len2)
+#endif
+    Serial.begin(115200);
     //m.start_setup();
     //m.start_cycle();
 }
 
 void loop() {
-    m.state_machine();
+    bool k1 = FastGPIO::Pin<IO_B0>::isInputHigh();
+    bool k2 = FastGPIO::Pin<IO_B1>::isInputHigh();
+    bool p1 = FastGPIO::Pin<IO_B2>::isInputHigh();
+    bool p2 = FastGPIO::Pin<IO_B3>::isInputHigh();
+    int speed = analogRead(A7);
+    if (!k1) {
+        Serial.print("START: ");
+    }
+    if (!k2) {
+        Serial.print("STOP: ");
+    }
+    if (p1) {
+        Serial.print("SETUP: ");
+    } else {
+        Serial.print("CYCLE: ");
+    }
+    if (p2) {
+        Serial.print("P #1: ");
+    } else {
+        Serial.print("P #2: ");
+    }
+    Serial.println(speed);
+    delay(500);
+    //m.state_machine();
 }

@@ -2,3 +2,7 @@
 + PORTD.D3-Out
 + PORTD.D4-Out
 + PORTD.D5-Out
+
++ PORTB.PORT
++ PORTB.PIN
++ PORTB.DDR

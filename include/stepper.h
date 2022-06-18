@@ -9,7 +9,8 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
         DIRECTION_CW  = 1   ///< Clockwise
     } Direction;
 
-    Stepper() : _lastStepTime(0) {
+    Stepper() {
+        _lastStepTime = 0;
         FastGPIO::Pin<step_pin>::setOutput(LOW);
         FastGPIO::Pin<dir_pin>::setOutput(LOW);
         setCurrentPosition(0);
