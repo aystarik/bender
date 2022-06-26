@@ -14,8 +14,7 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
         FastGPIO::Pin<step_pin>::setOutput(LOW);
         FastGPIO::Pin<dir_pin>::setOutput(LOW);
         setCurrentPosition(0);
-        setAcceleration(25000.0);
-        setMaxSpeed(8000.0);
+        setAcceleration(12800.0);
     }
 
     void stepHigh() {FastGPIO::Pin<step_pin>::setOutputValueHigh();}
@@ -64,22 +63,9 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
             // New c0 per Equation 7, with correction per Equation 15
              _acceleration = acceleration;
             _inverse_accel = 0.5 / acceleration;
-            _c0 = 2.0 * 0.676 * sqrt(_inverse_accel) * 1000000.0; // Equation 15
+            _c0 = 0.676 * sqrt(2 / acceleration) * 1000000.0; // Equation 15
            computeNewSpeed();
         }
-    }
-
-    void setSpeed(float speed) {
-        if (speed == _speed)
-            return;
-        speed = constrain(speed, -_maxSpeed, _maxSpeed);
-        if (speed == 0.0)
-            _stepInterval = 0;
-        else {
-            _stepInterval = fabs(1000000.0 / speed);
-            _direction = (speed > 0.0) ? DIRECTION_CW : DIRECTION_CCW;
-        }
-        _speed = speed;
     }
 
     void moveTo(long absolute) {
@@ -98,6 +84,7 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
         return _targetPos - _currentPos;
     }
     unsigned long _lastStepTime;
+
     bool runSpeed() {
         // Dont do anything unless we actually have a step interval
         if (!_stepInterval)
@@ -117,9 +104,7 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
 
     void computeNewSpeed() {
         long distanceTo = distanceToGo(); // +ve is clockwise from curent location
-        //FastGPIO::Pin<IO_B0>::setOutputHigh();
         long stepsToStop = (long)(_speed * _speed * _inverse_accel); // Equation 16
-        //FastGPIO::Pin<IO_B0>::setOutputLow();
 
         if (distanceTo == 0 && stepsToStop <= 1) {
             // We are at the target and its time to stop
@@ -128,11 +113,26 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
             _n = 0;
             return;
         }
+
         Direction new_direction = DIRECTION_CW;
         if (distanceTo < 0) {
             distanceTo = -distanceTo;
             new_direction = DIRECTION_CCW;
         }
+        if (distanceTo > 0) {
+            // We are anticlockwise from the target
+            // Need to go clockwise from here, maybe decelerate now
+            if (_n > 0) {
+                // Currently accelerating, need to decel now? Or maybe going the wrong way?
+                if ((stepsToStop >= distanceTo) || _direction != new_direction)
+                    _n = -stepsToStop; // Start deceleration
+            } else if (_n < 0) {
+                // Currently decelerating, need to accel again?
+                if ((stepsToStop < distanceTo) && _direction == new_direction)
+                    _n = -_n; // Start accceleration
+            }
+        }
+
         // Need to accelerate or decelerate
         if (_n == 0) {
             // First step from stopped
@@ -141,35 +141,22 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
             _direction = new_direction;
             dir(_direction);
         } else {
-            // Need to go clockwise from here, maybe decelerate now
-            if (_n > 0) {
-                // Currently accelerating, need to decel now? Or maybe going the wrong way?
-                if ((stepsToStop >= distanceTo) || _direction != new_direction)
-                    _n = -stepsToStop; // Start deceleration
-            } else {
-                // Currently decelerating, need to accel again?
-                if ((stepsToStop < distanceTo) && _direction == new_direction)
-                    _n = -_n; // Start accceleration
-            }
-            //FastGPIO::Pin<IO_B1>::setOutputHigh();
             // Subsequent step. Works for accel (n is +_ve) and decel (n is -ve).
             _cn10 -= (2 * _cn10) / (4 * _n + 1); // Equation 13
             _cn = _cn10 >> 10;
             if (_cn < _cmin) {
                 _cn = _cmin;
             }
-            //FastGPIO::Pin<IO_B1>::setOutputLow();
         }
-
         ++_n;
         _stepInterval = _cn;
-        _speed = 1000000UL / _cn;
+        _speed = 1000000L / _cn;
         if (_direction == DIRECTION_CCW)
             _speed = -_speed;
     }
 
     void stop() {
-        if (_speed == 0.0)
+        if (_speed == 0)
             return;
         long stepsToStop = (long)((_speed * _speed * _inverse_accel)) + 1; // Equation 16 (+integer rounding)
         if (_speed > 0)
