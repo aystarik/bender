@@ -106,7 +106,17 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
         long distanceTo = distanceToGo(); // +ve is clockwise from curent location
         long stepsToStop = (long)(_speed * _speed * _inverse_accel); // Equation 16
 
-        if (distanceTo == 0 && stepsToStop <= 1) {
+        Direction new_direction = DIRECTION_CW;
+        if (distanceTo < 0) {
+            if (dir_pin != IO_NONE) {
+                distanceTo = -distanceTo;
+                new_direction = DIRECTION_CCW;
+            } else {
+                distanceTo = 0;
+            }
+        }
+
+        if (distanceTo == 0) {
             // We are at the target and its time to stop
             _stepInterval = 0;
             _speed = 0.0;
@@ -114,11 +124,6 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
             return;
         }
 
-        Direction new_direction = DIRECTION_CW;
-        if (distanceTo < 0) {
-            distanceTo = -distanceTo;
-            new_direction = DIRECTION_CCW;
-        }
         if (distanceTo > 0) {
             // We are anticlockwise from the target
             // Need to go clockwise from here, maybe decelerate now
@@ -143,7 +148,7 @@ template <uint8_t step_pin, uint8_t dir_pin = IO_NONE> struct Stepper {
         } else {
             // Subsequent step. Works for accel (n is +_ve) and decel (n is -ve).
             _cn10 -= (2 * _cn10) / (4 * _n + 1); // Equation 13
-            _cn = _cn10 >> 10;
+            _cn = (_cn10 + 512) >> 10;
             if (_cn < _cmin) {
                 _cn = _cmin;
             }
