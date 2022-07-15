@@ -82,6 +82,7 @@ struct Machine {
     void start_setup2() {
         //Serial.println("start setup");
         st = M_SETUP2;
+        FastGPIO::Pin<MOTOR_ENABLE>::setOutput(false);
         s2.setMaxSpeed(variSpeed(MAX_SPEED_S2));
         s2.move(400000);
     }
@@ -89,6 +90,7 @@ struct Machine {
     void start_setup3() {
         //Serial.println("start setup");
         st = M_SETUP3;
+        FastGPIO::Pin<MOTOR_ENABLE>::setOutput(false);
         s3.setMaxSpeed(variSpeed(MAX_SPEED_S3));
         s3.move(400000);
     }
@@ -155,6 +157,7 @@ struct Machine {
         case M_STOPPING2: {
             if (!s2.run()) {// stopped
                 //Serial.println("go IDLE");
+                FastGPIO::Pin<MOTOR_ENABLE>::setOutput(true);
                 st = M_IDLE;
             }
             break;
@@ -171,6 +174,7 @@ struct Machine {
         case M_STOPPING3: {
             if (!s3.run()) {// stopped
                 //Serial.println("go IDLE");
+                FastGPIO::Pin<MOTOR_ENABLE>::setOutput(true);
                 st = M_IDLE;
             }
             break;
@@ -231,6 +235,9 @@ struct Machine {
 } m;
 
 void setup() {
+    m.s.setAcceleration(12800.0);
+    m.s2.setAcceleration(6400.0);
+    m.s3.setAcceleration(6400.0);
     //Serial.begin(115200);
     //s.setSpeed(8000);
     //s.moveTo(3200);
